@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/freiheit-com/failawarehttp.svg?branch=master)](https://travis-ci.org/freiheit-com/failawarehttp)
+[![Build Status](https://travis-ci.org/Ragnaroek/failawarehttp.svg?branch=master)](https://travis-ci.org/Ragnaroek/failawarehttp)
 
 # failawarehttp
 Go http client, with an awareness for failures
