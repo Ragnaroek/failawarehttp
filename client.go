@@ -65,16 +65,20 @@ type FailAwareHTTPOptions struct {
 	KeepLog            bool
 }
 
-var defaultOptions = FailAwareHTTPOptions{
-	MaxRetries:         3,
-	Timeout:            1 * time.Second,
-	BackOffDelayFactor: 1 * time.Second,
-	KeepLog:            false,
-}
-
+var defaultOptions = NewDefaultOptions()
 var nullOptions = FailAwareHTTPOptions{}
 
-//NewDefaultClient create a FailAwareHTTP client with defaultOptions.
+//NewDefaultOptions creates new default options for the client.
+func NewDefaultOptions() FailAwareHTTPOptions {
+	return FailAwareHTTPOptions{
+		MaxRetries:         3,
+		Timeout:            1 * time.Second,
+		BackOffDelayFactor: 1 * time.Second,
+		KeepLog:            false,
+	}
+}
+
+//NewDefaultClient creates a FailAwareHTTP client with defaultOptions.
 func NewDefaultClient() *FailAwareHTTPClient {
 	return NewClient(defaultOptions)
 }
