@@ -151,6 +151,14 @@ func (e FailAwareHTTPError) Error() string {
 	return fmt.Sprintf("err log: %#v", e.Errors)
 }
 
+func (c *FailAwareHTTPClient) Get(url string) (resp *http.Response, err error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+	return c.Do(req)
+}
+
 //Post does a fail-aware Post request and retries in the case of retrieable errors
 func (c *FailAwareHTTPClient) Post(url, contentType string, body io.Reader) (resp *http.Response, err error) {
 	req, err := http.NewRequest("POST", url, body)

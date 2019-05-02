@@ -115,6 +115,21 @@ func TestNoPostRetryOnOk(t *testing.T) {
 	assert.Equal(t, 200, rsp.StatusCode)
 }
 
+// Get
+
+func TestNoGetRetryOnOk(t *testing.T) {
+	port, err := serverWith(200)
+	if err != nil {
+		t.Fatal("unable to start server", err)
+	}
+	url := fmt.Sprintf("http://localhost:%d", port)
+
+	client := NewDefaultClient()
+	rsp, err := client.Get(url)
+	assert.Nil(t, err)
+	assert.Equal(t, 200, rsp.StatusCode)
+}
+
 //Helper
 
 func optionsWithMinTimeouts() FailAwareHTTPOptions {
