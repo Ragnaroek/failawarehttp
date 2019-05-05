@@ -1,5 +1,5 @@
 [![Build Status](https://travis-ci.org/Ragnaroek/failawarehttp.svg?branch=master)](https://travis-ci.org/Ragnaroek/failawarehttp)
-[![Coverage Status](https://coveralls.io/repos/github/Ragnaroek/failawarehttp/badge.svg?branch=master)](https://coveralls.io/github/Ragnaroek/failawarehttp?branch=master)
+[![codecov](https://codecov.io/gh/Ragnaroek/failawarehttp/branch/master/graph/badge.svg)](https://codecov.io/gh/Ragnaroek/failawarehttp)
 
 # failawarehttp
 Go http client, with an awareness for failures
