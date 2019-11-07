@@ -195,6 +195,11 @@ func (c *FailAwareHTTPClient) Do(originalReq *http.Request) (*http.Response, err
 
 		started := time.Now()
 		lastResponse, lastError = c.httpClient.Do(originalReq)
+		log.WithFields(logrus.Fields{
+			"response": lastResponse,
+			"error":    lastError,
+		}).Debug()
+		//Debug log response, err result! (if debug enabled)
 		if c.options.KeepLog {
 			errLog = append(errLog, errEntryNow(lastError, lastResponse, started))
 		}
