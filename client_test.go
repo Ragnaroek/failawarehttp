@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
@@ -60,6 +61,28 @@ func TestNoDoRetryOnOk(t *testing.T) {
 	rsp, err := client.Do(req)
 	assert.Nil(t, err)
 	assert.Equal(t, 200, rsp.StatusCode)
+}
+
+func TestNoDoRetryOnContextCancel(t *testing.T) {
+	port, err := serverWith(200)
+	if err != nil {
+		t.Fatal("unable to start server", err)
+	}
+	url := fmt.Sprintf("http://localhost:%d", port)
+
+	client := NewDefaultClient()
+	req, err := http.NewRequest("GET", url, nil)
+	assert.Nil(t, err)
+	ctx, cancel := context.WithCancel(context.Background())
+	req = req.WithContext(ctx)
+	cancel()
+
+	rsp, err := client.Do(req)
+	assert.NotNil(t, err)
+	assert.Nil(t, rsp)
+
+	failErr := err.(FailAwareHTTPError)
+	assert.Equal(t, 0, failErr.Retries)
 }
 
 // Post
