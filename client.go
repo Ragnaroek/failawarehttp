@@ -2,6 +2,8 @@ package http
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -208,6 +210,10 @@ func (c *FailAwareHTTPClient) Do(originalReq *http.Request) (*http.Response, err
 			if lastError == nil {
 				return lastResponse, nil
 			}
+			return lastResponse, FailAwareHTTPError{Retries: retried, Errors: errLog, LastError: lastError}
+		}
+
+		if errors.Is(lastError, context.Canceled) {
 			return lastResponse, FailAwareHTTPError{Retries: retried, Errors: errLog, LastError: lastError}
 		}
 
