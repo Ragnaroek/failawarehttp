@@ -172,14 +172,19 @@ func TestLogging(t *testing.T) {
 	failErr := err.(FailAwareHTTPError)
 	assert.Equal(t, 3, failErr.Retries)
 
-	assert.Equal(t, []string{
-		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp [::1]:80: connect: connection refused",
+	expectedLogContains := []string{
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp",
 		"Retry #1 of request, waited 4ms before retry",
-		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp [::1]:80: connect: connection refused",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp",
 		"Retry #2 of request, waited 10ms before retry",
-		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp [::1]:80: connect: connection refused",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp",
 		"Retry #3 of request, waited 17ms before retry",
-	}, logger.debugLogs)
+	}
+
+	assert.Equal(t, len(expectedLogContains), len(logger.debugLogs))
+	for i, expected := range expectedLogContains {
+		assert.True(t, strings.Contains(logger.debugLogs[i], expected))
+	}
 }
 
 //Helper
