@@ -16,15 +16,15 @@ import (
 )
 
 var random *rand.Rand
-var log *logrus.Logger
 
 func init() {
 	random = rand.New(rand.NewSource(time.Now().UnixNano()))
+}
 
+func defaultLogger() Logger {
 	logger := logrus.StandardLogger()
 	logrus.SetLevel(logLevel())
-
-	log = logger
+	return logger
 }
 
 func logLevel() logrus.Level {
@@ -65,6 +65,7 @@ type FailAwareHTTPOptions struct {
 	Timeout            time.Duration
 	BackOffDelayFactor time.Duration
 	KeepLog            bool
+	Logger             Logger
 }
 
 var defaultOptions = NewDefaultOptions()
@@ -77,6 +78,7 @@ func NewDefaultOptions() FailAwareHTTPOptions {
 		Timeout:            1 * time.Second,
 		BackOffDelayFactor: 1 * time.Second,
 		KeepLog:            false,
+		Logger:             nil, //use default logrus logger
 	}
 }
 
@@ -109,11 +111,19 @@ func NewClient(options FailAwareHTTPOptions) *FailAwareHTTPClient {
 		backOffDelay = options.BackOffDelayFactor
 	}
 
+	var logger Logger
+	if options.Logger == nullOptions.Logger {
+		logger = defaultLogger()
+	} else {
+		logger = options.Logger
+	}
+
 	effectiveOptions := FailAwareHTTPOptions{
 		Timeout:            timeout,
 		MaxRetries:         maxRetries,
 		BackOffDelayFactor: backOffDelay,
 		KeepLog:            options.KeepLog,
+		Logger:             logger,
 	}
 
 	client := http.Client{
@@ -197,10 +207,7 @@ func (c *FailAwareHTTPClient) Do(originalReq *http.Request) (*http.Response, err
 
 		started := time.Now()
 		lastResponse, lastError = c.httpClient.Do(originalReq)
-		log.WithFields(logrus.Fields{
-			"response": lastResponse,
-			"error":    lastError,
-		}).Debug()
+		c.options.Logger.Debugf("FAH[Debug]: HTTP response: %#v, error %s", lastResponse, lastError)
 		//Debug log response, err result! (if debug enabled)
 		if c.options.KeepLog {
 			errLog = append(errLog, errEntryNow(lastError, lastResponse, started))
@@ -220,7 +227,7 @@ func (c *FailAwareHTTPClient) Do(originalReq *http.Request) (*http.Response, err
 		jitter := expJitterBackOff(retried, c.options.BackOffDelayFactor)
 
 		<-time.After(jitter)
-		log.Debugf("Retry #%d of request, waited %#v before retry", (retried + 1), jitter)
+		c.options.Logger.Debugf("Retry #%d of request, waited %dms before retry", (retried + 1), jitter/1000000)
 	}
 
 	if lastError == nil {

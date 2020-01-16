@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"net"
 	"net/http"
 	"strconv"
@@ -153,6 +154,34 @@ func TestNoGetRetryOnOk(t *testing.T) {
 	assert.Equal(t, 200, rsp.StatusCode)
 }
 
+// Logging
+
+func TestLogging(t *testing.T) {
+
+	randOrig := random
+	random = rand.New(rand.NewSource(666))
+	defer func() {
+		random = randOrig
+	}()
+
+	opts, logger := optionsWithDummyLogger()
+	client := NewClient(opts)
+	_, err := client.Post(nonExistingURL, "application/json", strings.NewReader("dummyBody"))
+	assert.NotNil(t, err)
+
+	failErr := err.(FailAwareHTTPError)
+	assert.Equal(t, 3, failErr.Retries)
+
+	assert.Equal(t, []string{
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp [::1]:80: connect: connection refused",
+		"Retry #1 of request, waited 4ms before retry",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp [::1]:80: connect: connection refused",
+		"Retry #2 of request, waited 10ms before retry",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp [::1]:80: connect: connection refused",
+		"Retry #3 of request, waited 17ms before retry",
+	}, logger.debugLogs)
+}
+
 //Helper
 
 func optionsWithMinTimeouts() FailAwareHTTPOptions {
@@ -164,6 +193,22 @@ func optionsWithMinTimeouts() FailAwareHTTPOptions {
 	}
 }
 
+type DummyLogger struct {
+	debugLogs []string
+}
+
+func (l *DummyLogger) Debugf(format string, v ...interface{}) {
+	l.debugLogs = append(l.debugLogs, fmt.Sprintf(format, v...))
+}
+
+//also with MinTimeouts
+func optionsWithDummyLogger() (FailAwareHTTPOptions, *DummyLogger) {
+	logger := DummyLogger{}
+	opts := optionsWithMinTimeouts()
+	opts.Logger = &logger
+	return opts, &logger
+}
+
 func assertTimeWithDiff(t *testing.T, expected, actual time.Time, diffMax time.Duration) {
 	diffActual := absi(expected.UnixNano() - actual.UnixNano())
 	assert.True(t, int64(diffActual) < int64(diffMax), fmt.Sprintf("max time diff exceeded, was %s, max allowed %s", time.Duration(diffActual), diffMax))
@@ -173,7 +218,10 @@ func serverWith(statusCode int) (int, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(statusCode)
-		w.Write([]byte(fmt.Sprintf("%d status code", statusCode)))
+		_, err := w.Write([]byte(fmt.Sprintf("%d status code", statusCode)))
+		if err != nil {
+			panic(err)
+		}
 	})
 	l, err := net.Listen("tcp", ":0")
 	if err != nil {
@@ -181,7 +229,7 @@ func serverWith(statusCode int) (int, error) {
 	}
 	go func() {
 		if errSrv := http.Serve(l, mux); errSrv != nil {
-			log.Fatalf("slow-server error %v", errSrv)
+			panic(fmt.Sprintf("slow-server error %v", errSrv))
 		}
 	}()
 
