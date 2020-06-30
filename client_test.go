@@ -173,15 +173,16 @@ func TestLogging(t *testing.T) {
 	assert.Equal(t, 3, failErr.Retries)
 
 	expectedLogContains := []string{
-		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post \"http://localhost/doesNotExist\": dial tcp",
 		"Retry #1 of request, waited 4ms before retry",
-		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post \"http://localhost/doesNotExist\": dial tcp",
 		"Retry #2 of request, waited 10ms before retry",
-		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post http://localhost/doesNotExist: dial tcp",
+		"FAH[Debug]: HTTP response: (*http.Response)(nil), error Post \"http://localhost/doesNotExist\": dial tcp",
 		"Retry #3 of request, waited 17ms before retry",
 	}
 
 	assert.Equal(t, len(expectedLogContains), len(logger.debugLogs))
+	fmt.Printf("%#v", logger.debugLogs)
 	for i, expected := range expectedLogContains {
 		assert.True(t, strings.Contains(logger.debugLogs[i], expected))
 	}
