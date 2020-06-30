@@ -208,8 +208,8 @@ func (c *FailAwareHTTPClient) Do(originalReq *http.Request) (*http.Response, err
 		started := time.Now()
 		lastResponse, lastError = c.httpClient.Do(originalReq)
 		c.options.Logger.Debugf("FAH[Debug]: HTTP response: %#v, error %s", lastResponse, lastError)
-		//Debug log response, err result! (if debug enabled)
 		if c.options.KeepLog {
+			//Debug log response, err result! (if debug enabled)
 			errLog = append(errLog, errEntryNow(lastError, lastResponse, started))
 		}
 
